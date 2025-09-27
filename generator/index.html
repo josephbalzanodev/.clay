@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>.clay Colors Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 32px;
+        }
+        h1, h2 {
+            color: #1a2533;
+            border-bottom: 2px solid #eef2f5;
+            padding-bottom: 0.5rem;
+            margin-top: 0;
+        }
+        .input-section, .output-section {
+            margin-bottom: 1.5rem;
+        }
+        .color-input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .color-input-row input {
+            padding: 10px;
+            border: 1px solid #dcdfe2;
+            border-radius: 5px;
+            flex-grow: 1;
+        }
+        .color-input-row input[type="text"] {
+            width: 120px;
+        }
+        .color-input-row .color-preview {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .options {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 1.5rem;
+        }
+        label {
+            font-weight: 600;
+        }
+        select, button {
+            padding: 10px 15px;
+            border: 1px solid transparent;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        select {
+             border-color: #dcdfe2;
+        }
+        button {
+            color: #fff;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-radius: 12px;
+         }
+        .btn-primary:hover { background-color: #0056b3;
+            border-radius: 12px; }
+        .btn-secondary { background-color: #28a745;
+            border-radius: 12px; }
+        .btn-secondary:hover { background-color: #218838;
+            border-radius: 12px; }
+        .btn-danger { background-color: #dc3545;
+            border-radius: 12px; }
+        .btn-danger:hover { background-color: #C62828;
+            border-radius: 12px; }
+
+        #output-box {
+            width: 100%;
+            min-height: 200px;
+            padding: 10px;
+            border: 1px solid #dcdfe2;
+            border-radius: 12px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 14px;
+            background-color: #eef2f5;
+            resize: vertical;
+        }
+        .output-actions {
+            text-align: right;
+            margin-top: 10px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div>
+        <img src="/.clay/generatorerator/image/color_generator.svg" style="object-fit: cover; width: 100%"/>
+    </div>
+
+    <br/>
+    <div class="input-section">
+        <h2>Input base color</h2>
+        <div id="color-inputs-container">
+        </div>
+        <button id="add-color-btn" class="btn-secondary">Add color 🎨</button>
+    </div>
+
+    <div class="options">
+        <label for="mode-select">Variant:</label>
+        <select id="mode-select" style="border-radius: 12px">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+        </select>
+        <button id="generate-btn" class="btn-primary">Generate 🚀</button>
+    </div>
+
+    <div class="output-section">
+        <h2>Result</h2>
+        <textarea style="width: calc(100% - 24px)" id="output-box" readonly
+                  placeholder="copy to your theme.yaml this values..."></textarea>
+        <div class="output-actions">
+            <button id="copy-btn" class="btn-primary">Copy 📤</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function rgbToHsl(r, g, b) {
+        const max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h = 0, s = 0, l = (max + min) / 2;
+        if (max !== min) {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return { h, s, l };
+    }
+
+    function hslToRgb(h, s, l) {
+        let r, g, b;
+        if (s === 0) {
+            r = g = b = l;
+        } else {
+            const hue2rgb = (p, q, t) => {
+                if (t < 0) t += 1;
+                if (t > 1) t -= 1;
+                if (t < 1 / 6) return p + (q - p) * 6 * t;
+                if (t < 1 / 2) return q;
+                if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                return p;
+            };
+            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            const p = 2 * l - q;
+            r = hue2rgb(p, q, h + 1 / 3);
+            g = hue2rgb(p, q, h);
+            b = hue2rgb(p, q, h - 1 / 3);
+        }
+        return { r, g, b };
+    }
+
+    function adjustColor(hexColor, lightnessFactor, saturationFactor = 1) {
+        const hex = hexColor.startsWith("#") ? hexColor.substring(1) : hexColor;
+        if (!/^[0-9A-F]{6}$/i.test(hex)) return "rgb(invalid)";
+
+        let r = parseInt(hex.substring(0, 2), 16) / 255;
+        let g = parseInt(hex.substring(2, 4), 16) / 255;
+        let b = parseInt(hex.substring(4, 6), 16) / 255;
+
+        let { h, s, l } = rgbToHsl(r, g, b);
+
+        l = Math.max(0, Math.min(1, l * lightnessFactor));
+        s = Math.max(0, Math.min(1, s * saturationFactor));
+
+        ({ r, g, b } = hslToRgb(h, s, l));
+
+        return `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const inputsContainer = document.getElementById('color-inputs-container');
+        const addColorBtn = document.getElementById('add-color-btn');
+        const generateBtn = document.getElementById('generate-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        const modeSelect = document.getElementById('mode-select');
+        const outputBox = document.getElementById('output-box');
+
+        function createColorInputRow(name = '', hex = '') {
+            const row = document.createElement('div');
+            row.className = 'color-input-row';
+
+            row.innerHTML = `
+                <div class="color-preview" style="background-color: #${hex || 'fff'}; border-radius: 12px;"></div>
+                <input type="text" style="border-radius: 12px;" class="color-name-input" placeholder="Name (es. sage)" value="${name}">
+                <input type="text" style="border-radius: 12px;" class="color-hex-input" placeholder="Hex (es. E9EFD1)" value="${hex}">
+                <button style="border-radius: 12px;" class="remove-btn btn-danger">&times;</button>
+            `;
+
+            inputsContainer.appendChild(row);
+
+            const hexInput = row.querySelector('.color-hex-input');
+            const previewBox = row.querySelector('.color-preview');
+            hexInput.addEventListener('input', () => {
+                const cleanHex = hexInput.value.replace(/[^0-9A-F]/ig, '');
+                previewBox.style.backgroundColor = `#${cleanHex}`;
+            });
+        }
+
+        addColorBtn.addEventListener('click', () => createColorInputRow());
+
+        inputsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-btn')) {
+                e.target.closest('.color-input-row').remove();
+            }
+        });
+
+        generateBtn.addEventListener('click', () => {
+            const rows = inputsContainer.querySelectorAll('.color-input-row');
+            let output = '';
+
+            rows.forEach(row => {
+                const nameInput = row.querySelector('.color-name-input');
+                const hexInput = row.querySelector('.color-hex-input');
+
+                const colorName = nameInput.value.trim();
+                const colorHex = hexInput.value.trim().replace('#', '');
+
+                if (colorName && colorHex) {
+                    const gen = modeSelect.value;
+                    let bgColor, aColor, conColor;
+
+                    if (gen === 'light') {
+                        bgColor = adjustColor(colorHex, 1);
+                        aColor = adjustColor(colorHex, 0.3);
+                        conColor = adjustColor(colorHex, 0.8);
+                    } else { // dark
+                        bgColor = adjustColor(colorHex, 0.3);
+                        aColor = adjustColor(colorHex, 0.8);
+                        conColor = adjustColor(colorHex, 0.4);
+                    }
+
+                    output += `clay_${colorName}_bg: ${bgColor}\n`;
+                    output += `clay_${colorName}_accent: ${aColor}\n`;
+                    output += `clay_${colorName}_contrast: ${conColor}\n\n`;
+                }
+            });
+
+            outputBox.value = output.trim();
+        });
+
+        copyBtn.addEventListener('click', () => {
+            if (!outputBox.value) return;
+
+            navigator.clipboard.writeText(outputBox.value).then(() => {
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied ✅';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error("Error during copy: ", err);
+            });
+        });
+
+        createColorInputRow('sage', 'E9EFD1');
+        createColorInputRow('cyan', 'E4F1FF');
+        createColorInputRow('acqua', 'DAF6EF');
+    });
+</script>
+
+</body>
+</html>
