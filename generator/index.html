@@ -53,16 +53,17 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        .options {
+        .actions-container {
             display: flex;
-            align-items: center;
+            flex-wrap: wrap;
             gap: 15px;
+            align-items: center;
             margin-bottom: 1.5rem;
         }
         label {
             font-weight: 600;
         }
-        select, button {
+        select, button, .btn-like-label {
             padding: 10px 15px;
             border: 1px solid transparent;
             border-radius: 5px;
@@ -73,24 +74,33 @@
         select {
              border-color: #dcdfe2;
         }
-        button {
+        button, .btn-like-label {
             color: #fff;
         }
         .btn-primary {
             background-color: #007bff;
             border-radius: 12px;
-         }
-        .btn-primary:hover { background-color: #0056b3;
-            border-radius: 12px; }
-        .btn-secondary { background-color: #28a745;
-            border-radius: 12px; }
-        .btn-secondary:hover { background-color: #218838;
-            border-radius: 12px; }
-        .btn-danger { background-color: #dc3545;
-            border-radius: 12px; }
-        .btn-danger:hover { background-color: #C62828;
-            border-radius: 12px; }
-
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-radius: 12px;
+        }
+        .btn-secondary {
+            background-color: #28a745;
+            border-radius: 12px;
+        }
+        .btn-secondary:hover {
+            background-color: #218838;
+            border-radius: 12px;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border-radius: 12px;
+        }
+        .btn-danger:hover {
+            background-color: #C62828;
+            border-radius: 12px;
+        }
         #output-box {
             width: 100%;
             min-height: 200px;
@@ -110,6 +120,67 @@
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        #upload-input {
+            display: none;
+        }
+        .color-preview-slider {
+            display: flex;
+            overflow-x: auto;
+            gap: 16px;
+            padding: 16px 0;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #eef2f5;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .color-card {
+            flex-shrink: 0;
+            width: 112px;
+            height: 92px;
+            background-color: #fff;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+        .color-card .bg-part {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+        }
+        .color-card .accent-shape, .color-card .contrast-shape {
+            position: absolute;
+            z-index: 1;
+            border-radius: 16px;
+        }
+        .color-card .accent-shape {
+            width: 84px;
+            height: 16px;
+            top: 16px;
+            left: 16px;
+        }
+        .color-card .contrast-shape {
+            width: 48px;
+            height: 100%;
+            top: 0px;
+            left: 0px;
+            bottom: 0px;
+            border-radius: 16px 0px 0px 16px;
+        }
+        .color-card .card-name {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            font-size: 0.8em;
+            font-weight: 500;
+            margin-top: auto;
+        }
     </style>
 </head>
 <body>
@@ -127,21 +198,28 @@
         <button id="add-color-btn" class="btn-secondary">Add color 🎨</button>
     </div>
 
-    <div class="options">
-        <label for="mode-select">Variant:</label>
-        <select id="mode-select" style="border-radius: 12px">
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-        </select>
-        <button id="generate-btn" class="btn-primary">Generate 🚀</button>
+    <div class="actions-container">
+        <div>
+            <label for="mode-select">Variant:</label>
+            <select id="mode-select" style="border-radius: 12px;">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+            </select>
+        </div>
+        <button id="generate-btn" class="btn-primary">Generate Variant 🚀</button>
+
+        <button id="download-btn" style="border-radius: 12px;" class="btn-secondary">Export JSON 📥</button>
+        <button id="import-btn" style="border-radius: 12px;" class="btn-secondary btn-like-label">Import JSON 📤</button>
+        <input type="file" id="upload-input" accept=".json">
     </div>
 
     <div class="output-section">
-        <h2>Result</h2>
+        <h2>Result 🎨</h2>
+        <div id="color-preview-slider" class="color-preview-slider"></div>
         <textarea style="width: calc(100% - 24px)" id="output-box" readonly
                   placeholder="copy to your theme.yaml this values..."></textarea>
         <div class="output-actions">
-            <button id="copy-btn" class="btn-primary">Copy 📤</button>
+            <button id="copy-btn" class="btn-primary">Copy 📑</button>
         </div>
     </div>
 </div>
@@ -203,7 +281,6 @@
         return `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
     }
 
-
     document.addEventListener('DOMContentLoaded', () => {
         const inputsContainer = document.getElementById('color-inputs-container');
         const addColorBtn = document.getElementById('add-color-btn');
@@ -212,15 +289,21 @@
         const modeSelect = document.getElementById('mode-select');
         const outputBox = document.getElementById('output-box');
 
+        const downloadBtn = document.getElementById('download-btn');
+        const uploadInput = document.getElementById('upload-input');
+        const importBtn = document.getElementById('import-btn');
+
+        const colorPreviewSlider = document.getElementById('color-preview-slider');
+
         function createColorInputRow(name = '', hex = '') {
             const row = document.createElement('div');
             row.className = 'color-input-row';
 
             row.innerHTML = `
-                <div class="color-preview" style="background-color: #${hex || 'fff'}; border-radius: 12px;"></div>
-                <input type="text" style="border-radius: 12px;" class="color-name-input" placeholder="Name (es. sage)" value="${name}">
-                <input type="text" style="border-radius: 12px;" class="color-hex-input" placeholder="Hex (es. E9EFD1)" value="${hex}">
-                <button style="border-radius: 12px;" class="remove-btn btn-danger">&times;</button>
+                <div class="color-preview" style="background-color: #${hex || 'fff'}; border-radius: 12px"></div>
+                <input type="text" class="color-name-input" style="border-radius: 16px;" placeholder="Nome (es. sage)" value="${name}">
+                <input type="text" class="color-hex-input" style="border-radius: 16px;" placeholder="Hex (es. E9EFD1)" value="${hex}">
+                <button class="remove-btn btn-danger" style="border-radius: 16px;">&times;</button>
             `;
 
             inputsContainer.appendChild(row);
@@ -233,7 +316,31 @@
             });
         }
 
+        function updateColorPreviewSlider(generatedColors) {
+            colorPreviewSlider.innerHTML = '';
+
+            if (generatedColors.length === 0) {
+                return;
+            }
+
+            generatedColors.forEach(colorSet => {
+                const card = document.createElement('div');
+                card.className = 'color-card';
+                card.innerHTML = `
+                    <div class="bg-part" style="background-color: ${colorSet.bgColor};"></div>
+                    <div class="contrast-shape" style="background-color: ${colorSet.conColor};"></div>
+                    <div class="accent-shape" style="background-color: ${colorSet.aColor};"></div>
+                    <div class="accent-shape" style="background-color: ${colorSet.aColor}; width: 42px; top: 42px;"></div>
+                    <span class="card-name" style="background-color: ${colorSet.bgColor}; color: ${colorSet.aColor}" >${colorSet.name}</span>
+                `;
+                colorPreviewSlider.appendChild(card);
+            });
+        }
+
         addColorBtn.addEventListener('click', () => createColorInputRow());
+        importBtn.addEventListener('click', () => {
+            uploadInput.click();
+        });
 
         inputsContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-btn')) {
@@ -244,6 +351,7 @@
         generateBtn.addEventListener('click', () => {
             const rows = inputsContainer.querySelectorAll('.color-input-row');
             let output = '';
+            const generatedColorsForPreview = [];
 
             rows.forEach(row => {
                 const nameInput = row.querySelector('.color-name-input');
@@ -260,7 +368,7 @@
                         bgColor = adjustColor(colorHex, 1);
                         aColor = adjustColor(colorHex, 0.3);
                         conColor = adjustColor(colorHex, 0.8);
-                    } else { // dark
+                    } else {
                         bgColor = adjustColor(colorHex, 0.3);
                         aColor = adjustColor(colorHex, 0.8);
                         conColor = adjustColor(colorHex, 0.4);
@@ -269,10 +377,18 @@
                     output += `clay_${colorName}_bg: ${bgColor}\n`;
                     output += `clay_${colorName}_accent: ${aColor}\n`;
                     output += `clay_${colorName}_contrast: ${conColor}\n\n`;
+
+                    generatedColorsForPreview.push({
+                        name: colorName,
+                        bgColor,
+                        aColor,
+                        conColor
+                    });
                 }
             });
 
             outputBox.value = output.trim();
+            updateColorPreviewSlider(generatedColorsForPreview);
         });
 
         copyBtn.addEventListener('click', () => {
@@ -289,11 +405,69 @@
             });
         });
 
+        downloadBtn.addEventListener('click', () => {
+            const rows = inputsContainer.querySelectorAll('.color-input-row');
+            const colorsArray = [];
+            rows.forEach(row => {
+                const name = row.querySelector('.color-name-input').value.trim();
+                const hex = row.querySelector('.color-hex-input').value.trim().replace('#', '');
+                if (name && hex) {
+                    colorsArray.push({ name, hex });
+                }
+            });
+
+            if (colorsArray.length === 0) {
+                return;
+            }
+
+            const jsonString = JSON.stringify(colorsArray, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'clay_color_scheme.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        uploadInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const colors = JSON.parse(e.target.result);
+                    if (!Array.isArray(colors)) {
+                       throw new Error("JSON invalid - no array found");
+                    }
+
+                    inputsContainer.innerHTML = '';
+
+                    colors.forEach(color => {
+                        if (color.name && color.hex) {
+                            createColorInputRow(color.name, color.hex);
+                        }
+                    });
+                } catch (error) {
+                    alert(`Error loading file: ${error.message}`);
+                } finally {
+                    event.target.value = null;
+                }
+            };
+
+            reader.readAsText(file);
+        });
+
         createColorInputRow('sage', 'E9EFD1');
         createColorInputRow('cyan', 'E4F1FF');
         createColorInputRow('acqua', 'DAF6EF');
     });
 </script>
-
 </body>
 </html>
