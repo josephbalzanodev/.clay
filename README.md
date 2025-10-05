@@ -2,7 +2,7 @@
 
 Welcome to the **.clay** documentation, a versatile and highly customizable template for `custom:button-card` in Home Assistant. The goal of this template is to provide a solid, aesthetically clean, and functional foundation for creating modern and intuitive interfaces.
 
-Inspired by the principles of Neumorphism and Material Design, Clay allows you to build dynamic cards that change their appearance and color based on entity states, with a wide range of customization options.
+Inspired by the principles of Neumorphism and Material Design, Clay allows you to build dynamic cards that change their appearance and color based on entity states, with a wide range of customization options. Its name, 'Clay', embodies this philosophy: a template that is completely moldable to fit any need, yet provides a stable and reliable foundation once your configuration is set.
 
 ![](img/home_examples.png)
 
