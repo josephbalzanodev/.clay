@@ -1,4 +1,4 @@
-# .clay Template
+# .clay Template 🎨
 
 Welcome to the **.clay** documentation, a versatile and highly customizable template for `custom:button-card` in Home Assistant. The goal of this template is to provide a solid, aesthetically clean, and functional foundation for creating modern and intuitive interfaces.
 
